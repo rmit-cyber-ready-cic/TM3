@@ -1,0 +1,79 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Deploy Elasticsearch Domain
+Parameters:
+  InstanceType:
+    Type: String
+    Default: c4.large.elasticsearch
+
+  DomainName:
+    Type: String
+    Default: Armour1-es
+
+  MasterUserName:
+    Type: String
+    Default: admin
+
+  MasterUserPassword:
+    Type: String
+    NoEcho: true
+    Default: Asdf123
+
+Resources:
+
+  MyESDomain:
+    Type: AWS::Elasticsearch::Domain
+    Properties:
+      DomainName: !Ref DomainName 
+      AccessPolicies: !Sub |
+        {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "AWS": "*"
+              },
+              "Action": "es:*",
+              "Resource": "arn:aws:es:${AWS::Region}:${AWS::AccountId}:domain/${DomainName}/*"
+            }
+          ]
+        }
+      AdvancedSecurityOptions:
+          Enabled: true
+          InternalUserDatabaseEnabled: true
+          MasterUserOptions: 
+            MasterUserName: !Ref MasterUserName
+            MasterUserPassword: !Ref MasterUserPassword
+      EncryptionAtRestOptions: 
+        Enabled: true
+      NodeToNodeEncryptionOptions:
+        Enabled: true
+      DomainEndpointOptions:
+        EnforceHTTPS: true
+      EBSOptions: 
+        EBSEnabled: true
+        VolumeSize: 20
+        VolumeType: gp2
+      ElasticsearchClusterConfig: 
+        DedicatedMasterEnabled: false
+        InstanceCount: 1
+        InstanceType: !Ref InstanceType
+        ZoneAwarenessEnabled: false
+      ElasticsearchVersion: 7.10
+
+Outputs:
+  
+  Id:
+    Value: !Ref MyESDomain    
+    
+  Arn:
+    Value: !GetAtt MyESDomain.Arn    
+
+  DomainArn:
+    Value: !GetAtt MyESDomain.DomainArn
+    
+  DomainEndpoint:
+    Value: !GetAtt MyESDomain.DomainEndpoint    
+    
+  KibanaEndpoint:
+    Value: !Sub "${MyESDomain.DomainEndpoint}/_plugin/kibana/"
